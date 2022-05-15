@@ -39,5 +39,55 @@ class Query(graphene.ObjectType):
         return Question.objects.get(pk=id)
     def resolve_all_answers(root, info, id):
         return Answer.objects.filter(question=id)
+    
+    all_category = DjangoListField(CategoryType)
+    def resolve_all_category(root, info):
+        return Category.objects.all()
 
-schema = graphene.Schema(query=Query)
+
+class CategoryMutationAdd(graphene.Mutation):
+    class Arguments:
+        name = graphene.String(required=True)
+    
+    category = graphene.Field(CategoryType)
+
+    @classmethod
+    def mutate(cls, root, info, name):
+        category = Category(name=name)
+        category.save()
+        return CategoryMutationAdd(category=category)
+
+class CategoryMutationUpdate(graphene.Mutation):
+    class Arguments:
+        id = graphene.ID(required=True)
+        name = graphene.String(required=True)
+    
+    category = graphene.Field(CategoryType)
+
+    @classmethod
+    def mutate(cls, root, info, id, name):
+        category = Category.objects.get(id=id)
+        category.name = name
+        category.save()
+        return CategoryMutationUpdate(category=category)
+
+class CategoryMutationDelete(graphene.Mutation):
+    class Arguments:
+        id = graphene.ID(required=True)
+    
+    category = graphene.Field(CategoryType)
+
+    @classmethod
+    def mutate(cls, root, info, id):
+        category = Category.objects.get(id=id)
+        category.delete()
+        return 
+
+
+class Mutation(graphene.ObjectType):
+    add_category = CategoryMutationAdd.Field()
+    update_category = CategoryMutationUpdate.Field()
+    delete_category = CategoryMutationDelete.Field()
+
+
+schema = graphene.Schema(query=Query, mutation=Mutation)
